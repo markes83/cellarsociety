@@ -138,12 +138,18 @@ create policy "Utilizador edita o seu perfil" on public.profiles
   for update using (auth.uid() = id);
 
 -- PRODUCTS
-create policy "Membros vêem produtos visíveis" on public.products
-  for select using (auth.uid() is not null and visible = true);
-create policy "Admins vêem todos os produtos" on public.products
-  for select using (public.is_admin());
-create policy "Admins gerem produtos" on public.products
-  for all using (public.is_admin());
+-- Uma única política SELECT: admins vêem tudo, membros só os visíveis
+create policy "SELECT products" on public.products
+  for select using (
+    auth.uid() is not null
+    and (visible = true or public.is_admin())
+  );
+create policy "Admins inserem produtos" on public.products
+  for insert with check (public.is_admin());
+create policy "Admins atualizam produtos" on public.products
+  for update using (public.is_admin());
+create policy "Admins apagam produtos" on public.products
+  for delete using (public.is_admin());
 
 -- ORDERS
 create policy "Utilizador vê as suas encomendas" on public.orders
